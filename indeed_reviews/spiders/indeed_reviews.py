@@ -1,12 +1,10 @@
 
-
 from scrapy.spiders import Spider
 from scrapy import Request
 
 from indeed_reviews.items import IndeedReviewsItem, IndeedReviewsItemLoader
 from urllib.parse import urlencode
 from itertools import islice
-import logging
 
 
 class IndeedSpider(Spider):
@@ -16,19 +14,10 @@ class IndeedSpider(Spider):
     start_urls = ['https://www.indeed.co.uk/companies']
     maximum_reviews = 20
 
-    def __init__(self, company_name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.company_name = company_name
-        logging.debug(f"company name is {company_name}")
-
-    def start_requests(self):
-        for start_url in self.start_urls:
-            yield Request(start_url,
-                          meta={'company_name': self.company_name})
-
     def parse(self, response):
-        logging.debug(f"start parse for url: {response.url}")
         company_name = response.meta['company_name']
         search_url = 'https://www.indeed.co.uk/cmp?'
         query = {'from': 'discovery-cmp-front-door',
@@ -38,16 +27,13 @@ class IndeedSpider(Spider):
                       callback=self.parse_search)
 
     def parse_search(self, response):
-        logging.debug(f"parse_search for {response.url}")
         company_url = response.xpath(
             '//*[@itemprop="url"]/@href'
         ).extract_first()
-        logging.debug(f"company_url is {company_url}")
         yield Request(response.urljoin(company_url) + '/reviews',
                       callback=self.parse_reviews)
 
     def parse_reviews(self, response):
-        logging.debug(f"parse_reviews for {response.url}")
         reviews_xpath = response.xpath('//*[@class="cmp-review"]')
         for review_xpath in islice(reviews_xpath, 0, self.maximum_reviews):
             loader = IndeedReviewsItemLoader(
@@ -55,7 +41,6 @@ class IndeedSpider(Spider):
             title = review_xpath.xpath(
                 './/*[@class="cmp-review-title"]/span/text()'
             ).extract_first()
-            logging.debug(f"title is {title}")
             stars = review_xpath.xpath(
                 './/*[@class="cmp-ratingNumber"]/text()'
             ).extract_first()
