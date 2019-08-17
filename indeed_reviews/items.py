@@ -6,7 +6,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-from scrapy.loader.processors import  TakeFirst, Identity
+from scrapy.loader.processors import TakeFirst, Identity
 
 
 class IndeedReviewsItemLoader(scrapy.loader.ItemLoader):
