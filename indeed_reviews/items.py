@@ -6,7 +6,13 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-from scrapy.loader.processors import TakeFirst, Identity
+from scrapy.loader.processors import TakeFirst, Identity, Compose, MapCompose, \
+    Join
+
+
+def compact(string):
+    """ returns None if string is empty, otherwise string itself """
+    return string if string else None
 
 
 class IndeedReviewsItemLoader(scrapy.loader.ItemLoader):
@@ -16,6 +22,9 @@ class IndeedReviewsItemLoader(scrapy.loader.ItemLoader):
     # except if a specific in or output processor is specified
     default_input_processor = Identity()
     default_output_processor = TakeFirst()
+
+    review_in = Compose(MapCompose(str.strip, compact),
+                             Join())
 
 
 class IndeedReviewsItem(scrapy.Item):
