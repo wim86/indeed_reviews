@@ -5,6 +5,7 @@ from scrapy import Request
 
 from indeed_reviews.items import IndeedReviewsItem, IndeedReviewsItemLoader
 from urllib.parse import urlencode
+from itertools import islice
 import logging
 
 
@@ -13,6 +14,7 @@ class IndeedSpider(Spider):
 
     allowed_domains = ['indeed.co.uk', ]
     start_urls = ['https://www.indeed.co.uk/companies']
+    maximum_reviews = 20
 
     def __init__(self, company_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,11 +22,17 @@ class IndeedSpider(Spider):
         self.company_name = company_name
         logging.debug(f"company name is {company_name}")
 
+    def start_requests(self):
+        for start_url in self.start_urls:
+            yield Request(start_url,
+                          meta={'company_name': self.company_name})
+
     def parse(self, response):
         logging.debug(f"start parse for url: {response.url}")
+        company_name = response.meta['company_name']
         search_url = 'https://www.indeed.co.uk/cmp?'
         query = {'from': 'discovery-cmp-front-door',
-                 'q': self.company_name}
+                 'q': company_name}
 
         yield Request(search_url + urlencode(query),
                       callback=self.parse_search)
@@ -41,7 +49,7 @@ class IndeedSpider(Spider):
     def parse_reviews(self, response):
         logging.debug(f"parse_reviews for {response.url}")
         reviews_xpath = response.xpath('//*[@class="cmp-review"]')
-        for review_xpath in reviews_xpath:
+        for review_xpath in islice(reviews_xpath, 0, self.maximum_reviews):
             loader = IndeedReviewsItemLoader(
                 item=IndeedReviewsItem(), response=response)
             title = review_xpath.xpath(
@@ -52,22 +60,22 @@ class IndeedSpider(Spider):
                 './/*[@class="cmp-ratingNumber"]/text()'
             ).extract_first()
             division = review_xpath.xpath(
-                '//*[@itemprop="author"]/*[@itemprop="name"]/@content'
+                './/*[@itemprop="author"]/*[@itemprop="name"]/@content'
             ).extract_first()
             location = review_xpath.xpath(
-                '//*[@class="cmp-reviewer-job-location"]/text()'
+                './/*[@class="cmp-reviewer-job-location"]/text()'
             ).extract_first()
             date = review_xpath.xpath(
-                '//*[@class="cmp-review-date-created"]/text()'
+                './/*[@class="cmp-review-date-created"]/text()'
             ).extract_first()
             review = review_xpath.xpath(
-                '//*[@itemprop="reviewBody"]/text()'
-            ).extract_first()
+                './/*[@itemprop="reviewBody"]/text()'
+            ).extract()
             pros = review_xpath.xpath(
-                '//*[@class="cmp-review-pro-text"]/text()'
+                './/*[@class="cmp-review-pro-text"]/text()'
             ).extract_first()
             cons = review_xpath.xpath(
-                '//*[@class="cmp-review-con-text"]/text()'
+                './/*[@class="cmp-review-con-text"]/text()'
             ).extract_first()
 
             loader.add_value('title', title)
