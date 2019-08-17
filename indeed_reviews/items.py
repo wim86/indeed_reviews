@@ -11,4 +11,10 @@ import scrapy
 class IndeedReviewsItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
+    title = scrapy.Field()
+    stars = scrapy.Field()
+    division = scrapy.Field()
+    location = scrapy.Field()
+    date = scrapy.Field()
+    review = scrapy.Field()
     pass
