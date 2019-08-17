@@ -8,6 +8,7 @@
 import scrapy
 from scrapy.loader.processors import  TakeFirst, Identity
 
+
 class IndeedReviewsItemLoader(scrapy.loader.ItemLoader):
     """ Class containing the ItemLoader for clothes"""
     # default input & output processors
