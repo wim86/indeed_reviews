@@ -3,7 +3,8 @@
 from scrapy.spiders import Spider
 from scrapy import Request
 
-from urllib.parse import urlencode, urljoin
+from indeed_reviews.items import IndeedReviewsItem, IndeedReviewsItemLoader
+from urllib.parse import urlencode
 import logging
 
 
@@ -39,5 +40,43 @@ class IndeedSpider(Spider):
 
     def parse_reviews(self, response):
         logging.debug(f"parse_reviews for {response.url}")
-        from scrapy.shell import inspect_response
-        inspect_response(response, self)
+        reviews_xpath = response.xpath('//*[@class="cmp-review"]')
+        for review_xpath in reviews_xpath:
+            loader = IndeedReviewsItemLoader(
+                item=IndeedReviewsItem(), response=response)
+            title = review_xpath.xpath(
+                './/*[@class="cmp-review-title"]/span/text()'
+            ).extract_first()
+            logging.debug(f"title is {title}")
+            stars = review_xpath.xpath(
+                './/*[@class="cmp-ratingNumber"]/text()'
+            ).extract_first()
+            division = review_xpath.xpath(
+                '//*[@itemprop="author"]/*[@itemprop="name"]/@content'
+            ).extract_first()
+            location = review_xpath.xpath(
+                '//*[@class="cmp-reviewer-job-location"]/text()'
+            ).extract_first()
+            date = review_xpath.xpath(
+                '//*[@class="cmp-review-date-created"]/text()'
+            ).extract_first()
+            review = review_xpath.xpath(
+                '//*[@itemprop="reviewBody"]/text()'
+            ).extract_first()
+            pros = review_xpath.xpath(
+                '//*[@class="cmp-review-pro-text"]/text()'
+            ).extract_first()
+            cons = review_xpath.xpath(
+                '//*[@class="cmp-review-con-text"]/text()'
+            ).extract_first()
+
+            loader.add_value('title', title)
+            loader.add_value('stars', stars)
+            loader.add_value('division', division)
+            loader.add_value('location', location)
+            loader.add_value('date', date)
+            loader.add_value('review', review)
+            loader.add_value('pros', pros)
+            loader.add_value('cons', cons)
+            item = loader.load_item()
+            yield item
