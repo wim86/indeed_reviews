@@ -6,8 +6,6 @@ from indeed_reviews.items import IndeedReviewsItem, IndeedReviewsItemLoader
 from urllib.parse import urlencode
 from itertools import islice
 
-import logging
-
 
 class GlassdoorSpider(Spider):
     name = 'glassdoor'
@@ -45,7 +43,6 @@ class GlassdoorSpider(Spider):
 
     def parse_reviews(self, response):
         total_reviews = response.meta.get('number_reviews', 0)
-        logging.debug(f"total reviews is {total_reviews}")
         reviews_xpath = response.xpath('//*[starts-with(@class,"empReview")]')
         for review_xpath in islice(
                         reviews_xpath, 0, self.maximum_reviews - total_reviews):
